@@ -1,0 +1,6 @@
+{
+  "name": "MovieDB",
+  "description": "Aplikasi katalog film premium TMDB dengan arsitektur Clean, manual DI, Jetpack Compose, dan caching luring.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
