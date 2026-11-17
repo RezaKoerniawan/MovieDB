@@ -3,6 +3,7 @@ package com.example.data.repository
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.example.core.di.IoDispatcher
 import com.example.core.network.MovieApiService
 import com.example.core.network.ResultWrapper
 import com.example.core.network.toResultWrapper
@@ -15,17 +16,18 @@ import com.example.domain.model.MovieDetails
 import com.example.domain.model.Review
 import com.example.domain.model.Video
 import com.example.domain.repository.MovieRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
 
-class MovieRepositoryImpl(
+class MovieRepositoryImpl @Inject constructor(
     private val apiService: MovieApiService,
     private val favoriteDataStore: FavoriteMovieDataStore,
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : MovieRepository {
 
     override fun getGenres(): Flow<ResultWrapper<List<Genre>>> = flow {
@@ -34,6 +36,8 @@ class MovieRepositoryImpl(
             val response = apiService.getGenres()
             val genres = response.genres.map { it.toDomain() }
             emit(ResultWrapper.Success(genres))
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (e: Exception) {
             emit(e.toResultWrapper())
         }
@@ -55,6 +59,8 @@ class MovieRepositoryImpl(
         try {
             val response = apiService.getMovieDetails(movieId)
             emit(ResultWrapper.Success(response.toDomain()))
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (e: Exception) {
             emit(e.toResultWrapper())
         }
@@ -74,12 +80,13 @@ class MovieRepositoryImpl(
         emit(ResultWrapper.Loading)
         try {
             val response = apiService.getMovieVideos(movieId)
-            // Filter hanya video YouTube dan utamakan yang bertipe Trailer/Teaser
             val videos = response.results
                 .filter { it.site.equals("YouTube", ignoreCase = true) }
                 .map { it.toDomain() }
-                .sortedByDescending { it.isTrailer } // Trailer akan berada di urutan pertama
+                .sortedByDescending { it.isTrailer }
             emit(ResultWrapper.Success(videos))
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (e: Exception) {
             emit(e.toResultWrapper())
         }
@@ -91,6 +98,8 @@ class MovieRepositoryImpl(
             val response = apiService.getSimilarMovies(movieId)
             val movies = response.results.map { it.toDomain() }
             emit(ResultWrapper.Success(movies))
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (e: Exception) {
             emit(e.toResultWrapper())
         }
@@ -113,8 +122,7 @@ class MovieRepositoryImpl(
     }
 
     override suspend fun toggleFavorite(movie: Movie) {
-        val dto = movie.toDto()
-        favoriteDataStore.toggleFavorite(dto)
+        favoriteDataStore.toggleFavorite(movie.toDto())
     }
 
     override fun isMovieFavorite(movieId: Int): Flow<Boolean> {

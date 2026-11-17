@@ -9,18 +9,20 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.example.data.model.MovieDto
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import javax.inject.Inject
+import javax.inject.Singleton
 
 val Context.favoriteDataStore: DataStore<Preferences> by preferencesDataStore(name = "favorite_movies")
 
-class FavoriteMovieDataStore(private val context: Context) {
+@Singleton
+class FavoriteMovieDataStore @Inject constructor(
+    @ApplicationContext private val context: Context,
+    moshi: Moshi
+) {
 
-    private val moshi = Moshi.Builder()
-        .add(KotlinJsonAdapterFactory())
-        .build()
-        
     private val listType = Types.newParameterizedType(List::class.java, MovieDto::class.java)
     private val jsonAdapter = moshi.adapter<List<MovieDto>>(listType)
 
@@ -34,7 +36,7 @@ class FavoriteMovieDataStore(private val context: Context) {
             if (!jsonString.isNullOrEmpty()) {
                 try {
                     jsonAdapter.fromJson(jsonString) ?: emptyList()
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     emptyList()
                 }
             } else {
@@ -42,14 +44,13 @@ class FavoriteMovieDataStore(private val context: Context) {
             }
         }
 
-
     suspend fun toggleFavorite(movie: MovieDto) {
         context.favoriteDataStore.edit { preferences ->
             val jsonString = preferences[FAVORITE_MOVIES_JSON]
             val currentList = if (!jsonString.isNullOrEmpty()) {
                 try {
                     jsonAdapter.fromJson(jsonString)?.toMutableList() ?: mutableListOf()
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     mutableListOf()
                 }
             } else {
