@@ -1,24 +1,29 @@
 package com.example.core.network
 
+import com.example.BuildConfig
 import okhttp3.Interceptor
 import okhttp3.Response
-import com.example.BuildConfig
+import java.io.IOException
+import javax.inject.Inject
 
-class ApiKeyInterceptor : Interceptor {
+class ApiKeyInterceptor @Inject constructor() : Interceptor {
+
     override fun intercept(chain: Interceptor.Chain): Response {
-        val originalRequest = chain.request()
-        val originalUrl = originalRequest.url
-        
         val apiKey = BuildConfig.TMDB_API_KEY
+        if (apiKey.isBlank() || apiKey == "YOUR_TMDB_API_KEY") {
+            throw IOException(
+                "TMDB_API_KEY is not configured. Add your key to the local .env file."
+            )
+        }
 
-        val url = originalUrl.newBuilder()
-            .addQueryParameter("api_key", apiKey)
+        val authenticatedUrl = chain.request().url.newBuilder()
+            .setQueryParameter("api_key", apiKey)
             .build()
-            
-        val request = originalRequest.newBuilder()
-            .url(url)
+
+        val authenticatedRequest = chain.request().newBuilder()
+            .url(authenticatedUrl)
             .build()
-            
-        return chain.proceed(request)
+
+        return chain.proceed(authenticatedRequest)
     }
 }

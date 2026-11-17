@@ -6,10 +6,13 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.example.domain.model.Movie
 import com.example.domain.usecase.SearchMoviesUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
+import javax.inject.Inject
 
-class SearchViewModel(
+@HiltViewModel
+class SearchViewModel @Inject constructor(
     private val searchMoviesUseCase: SearchMoviesUseCase
 ) : ViewModel() {
 

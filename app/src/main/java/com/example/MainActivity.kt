@@ -8,14 +8,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.core.ui.ViewModelFactory
 import com.example.presentation.detail.DetailScreen
 import com.example.presentation.detail.DetailViewModel
 import com.example.presentation.favorite.FavoriteScreen
@@ -28,16 +26,16 @@ import com.example.presentation.navigation.Screen
 import com.example.presentation.search.SearchScreen
 import com.example.presentation.search.SearchViewModel
 import com.example.ui.theme.MyApplicationTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize()
-                ) {
+                Surface(modifier = Modifier.fillMaxSize()) {
                     MovieAppNavigation()
                 }
             }
@@ -48,19 +46,13 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MovieAppNavigation() {
     val navController = rememberNavController()
-    
-    // Mengambil AppContainer dari ApplicationContext untuk manual dependency injection
-    val context = LocalContext.current
-    val appContainer = (context.applicationContext as MovieApplication).container
-    val factory = ViewModelFactory(appContainer)
 
     NavHost(
         navController = navController,
         startDestination = Screen.Genre.route
     ) {
-        // 1. Genre Screen (Home / Discovery)
         composable(Screen.Genre.route) {
-            val viewModel: GenreViewModel = viewModel(factory = factory)
+            val viewModel: GenreViewModel = hiltViewModel()
             GenreScreen(
                 viewModel = viewModel,
                 onGenreClick = { genre ->
@@ -75,7 +67,6 @@ fun MovieAppNavigation() {
             )
         }
 
-        // 2. Movie List Screen (Endless scroll berdasarkan genre)
         composable(
             route = Screen.MovieList.route,
             arguments = listOf(
@@ -84,8 +75,8 @@ fun MovieAppNavigation() {
             )
         ) { backStackEntry ->
             val genreId = backStackEntry.arguments?.getInt("genreId") ?: 0
-            val genreName = backStackEntry.arguments?.getString("genreName") ?: ""
-            val viewModel: MovieListViewModel = viewModel(factory = factory)
+            val genreName = backStackEntry.arguments?.getString("genreName").orEmpty()
+            val viewModel: MovieListViewModel = hiltViewModel()
 
             MovieListScreen(
                 genreId = genreId,
@@ -100,7 +91,6 @@ fun MovieAppNavigation() {
             )
         }
 
-        // 3. Movie Detail Screen (Rincian, Trailer, Ulasan, Film Mirip)
         composable(
             route = Screen.Detail.route,
             arguments = listOf(
@@ -108,13 +98,12 @@ fun MovieAppNavigation() {
             )
         ) { backStackEntry ->
             val movieId = backStackEntry.arguments?.getInt("movieId") ?: 0
-            val viewModel: DetailViewModel = viewModel(factory = factory)
+            val viewModel: DetailViewModel = hiltViewModel()
 
             DetailScreen(
                 movieId = movieId,
                 viewModel = viewModel,
                 onMovieClick = { movie ->
-                    // Navigasi rekursif ke film serupa
                     navController.navigate(Screen.Detail.createRoute(movie.id))
                 },
                 onBackClick = {
@@ -123,9 +112,8 @@ fun MovieAppNavigation() {
             )
         }
 
-        // 4. Favorites Screen (Offline saved)
         composable(Screen.Favorite.route) {
-            val viewModel: FavoriteViewModel = viewModel(factory = factory)
+            val viewModel: FavoriteViewModel = hiltViewModel()
             FavoriteScreen(
                 viewModel = viewModel,
                 onMovieClick = { movie ->
@@ -137,9 +125,8 @@ fun MovieAppNavigation() {
             )
         }
 
-        // 5. Search Screen (Real-time dynamic search)
         composable(Screen.Search.route) {
-            val viewModel: SearchViewModel = viewModel(factory = factory)
+            val viewModel: SearchViewModel = hiltViewModel()
             SearchScreen(
                 viewModel = viewModel,
                 onMovieClick = { movie ->

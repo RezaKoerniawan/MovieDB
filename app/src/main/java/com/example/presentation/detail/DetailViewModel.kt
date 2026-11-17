@@ -10,9 +10,11 @@ import com.example.domain.model.MovieDetails
 import com.example.domain.model.Review
 import com.example.domain.model.Video
 import com.example.domain.usecase.*
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 sealed class DetailUiState {
     object Loading : DetailUiState()
@@ -20,7 +22,8 @@ sealed class DetailUiState {
     data class Error(val message: String) : DetailUiState()
 }
 
-class DetailViewModel(
+@HiltViewModel
+class DetailViewModel @Inject constructor(
     private val getMovieDetailsUseCase: GetMovieDetailsUseCase,
     private val getUserReviewsUseCase: GetUserReviewsUseCase,
     private val getMovieTrailersUseCase: GetMovieTrailersUseCase,
@@ -37,20 +40,24 @@ class DetailViewModel(
             when (result) {
                 is ResultWrapper.Loading -> DetailUiState.Loading
                 is ResultWrapper.Success -> DetailUiState.Success(result.data)
-                is ResultWrapper.Error -> DetailUiState.Error(result.message ?: "Gagal memuat detail film.")
+                is ResultWrapper.Error -> DetailUiState.Error(
+                    result.message ?: "Gagal memuat detail film."
+                )
             }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DetailUiState.Loading)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val trailersState: StateFlow<ResultWrapper<List<Video>>> = _movieId.filterNotNull().flatMapLatest { id ->
-        getMovieTrailersUseCase(id)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ResultWrapper.Loading)
+    val trailersState: StateFlow<ResultWrapper<List<Video>>> =
+        _movieId.filterNotNull().flatMapLatest { id ->
+            getMovieTrailersUseCase(id)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ResultWrapper.Loading)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val similarMoviesState: StateFlow<ResultWrapper<List<Movie>>> = _movieId.filterNotNull().flatMapLatest { id ->
-        getSimilarMoviesUseCase(id)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ResultWrapper.Loading)
+    val similarMoviesState: StateFlow<ResultWrapper<List<Movie>>> =
+        _movieId.filterNotNull().flatMapLatest { id ->
+            getSimilarMoviesUseCase(id)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ResultWrapper.Loading)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val isFavorite: StateFlow<Boolean> = _movieId.filterNotNull().flatMapLatest { id ->
