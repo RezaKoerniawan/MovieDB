@@ -4,11 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.domain.model.Movie
 import com.example.domain.usecase.GetFavoriteMoviesUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import javax.inject.Inject
 
-class FavoriteViewModel(
+@HiltViewModel
+class FavoriteViewModel @Inject constructor(
     getFavoriteMoviesUseCase: GetFavoriteMoviesUseCase
 ) : ViewModel() {
 

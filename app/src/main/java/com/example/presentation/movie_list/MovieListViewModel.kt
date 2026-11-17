@@ -6,12 +6,15 @@ import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.example.domain.model.Movie
 import com.example.domain.usecase.GetMoviesByGenreUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import javax.inject.Inject
 
-class MovieListViewModel(
+@HiltViewModel
+class MovieListViewModel @Inject constructor(
     private val getMoviesByGenreUseCase: GetMoviesByGenreUseCase
 ) : ViewModel() {
 
